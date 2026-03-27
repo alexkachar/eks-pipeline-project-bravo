@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "description": "Simple Express app for EKS pipeline project bravo",
   "main": "server.js",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.21.2"
+    "express": "^5.2.1"
   }
 }
-

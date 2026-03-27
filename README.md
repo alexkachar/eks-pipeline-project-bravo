@@ -70,5 +70,6 @@ Once DNS points to the ingress, cert-manager should finish the HTTP-01 challenge
 ## Notes
 
 - The app is served from the root domain: `https://alexanderkachar.com`
+- The app uses Node.js 24 and Express 5
 - The deployment workflow tags Docker images with the Git commit SHA
 - Infrastructure is intentionally manual so the setup stays easy to understand and repeat during training
