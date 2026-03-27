@@ -18,7 +18,10 @@ output "route53_zone_id" {
   value = data.aws_route53_zone.primary.zone_id
 }
 
+output "ingress_domain" {
+  value = var.root_domain
+}
+
 output "letsencrypt_email" {
   value = var.letsencrypt_email
 }
-

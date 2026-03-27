@@ -198,64 +198,6 @@ module "eks" {
   tags = local.tags
 }
 
-resource "aws_iam_policy" "external_dns" {
-  name = "${var.project_name}-external-dns"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "route53:ChangeResourceRecordSets"
-        ]
-        Resource = "arn:aws:route53:::hostedzone/${data.aws_route53_zone.primary.zone_id}"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "route53:ListHostedZones",
-          "route53:ListHostedZonesByName",
-          "route53:ListResourceRecordSets"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-
-  tags = local.tags
-}
-
-resource "aws_iam_role" "external_dns" {
-  name = "${var.project_name}-external-dns"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = module.eks.oidc_provider_arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:aud" = "sts.amazonaws.com"
-            "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:sub" = "system:serviceaccount:external-dns:external-dns"
-          }
-        }
-      }
-    ]
-  })
-
-  tags = local.tags
-}
-
-resource "aws_iam_role_policy_attachment" "external_dns" {
-  role       = aws_iam_role.external_dns.name
-  policy_arn = aws_iam_policy.external_dns.arn
-}
-
 data "aws_eks_cluster" "cluster" {
   name = module.eks.cluster_name
 
@@ -294,12 +236,6 @@ resource "kubernetes_namespace" "cert_manager" {
   }
 }
 
-resource "kubernetes_namespace" "external_dns" {
-  metadata {
-    name = "external-dns"
-  }
-}
-
 resource "helm_release" "ingress_nginx" {
   name             = "ingress-nginx"
   repository       = "https://kubernetes.github.io/ingress-nginx"
@@ -328,63 +264,4 @@ resource "helm_release" "cert_manager" {
   }
 
   depends_on = [module.eks, kubernetes_namespace.cert_manager]
-}
-
-resource "helm_release" "external_dns" {
-  name             = "external-dns"
-  repository       = "https://kubernetes-sigs.github.io/external-dns"
-  chart            = "external-dns"
-  namespace        = kubernetes_namespace.external_dns.metadata[0].name
-  create_namespace = false
-
-  set {
-    name  = "provider.name"
-    value = "aws"
-  }
-
-  set {
-    name  = "domainFilters[0]"
-    value = var.root_domain
-  }
-
-  set {
-    name  = "policy"
-    value = "sync"
-  }
-
-  set {
-    name  = "registry"
-    value = "txt"
-  }
-
-  set {
-    name  = "txtOwnerId"
-    value = var.cluster_name
-  }
-
-  set {
-    name  = "sources[0]"
-    value = "ingress"
-  }
-
-  set {
-    name  = "serviceAccount.create"
-    value = "true"
-  }
-
-  set {
-    name  = "serviceAccount.name"
-    value = "external-dns"
-  }
-
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.external_dns.arn
-  }
-
-  depends_on = [
-    module.eks,
-    kubernetes_namespace.external_dns,
-    aws_iam_role_policy_attachment.external_dns
-  ]
 }

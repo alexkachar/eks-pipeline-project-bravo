@@ -5,7 +5,6 @@ metadata:
   namespace: hello-app
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    external-dns.alpha.kubernetes.io/hostname: alexanderkachar.com
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
@@ -24,4 +23,3 @@ spec:
                 name: hello-app
                 port:
                   number: 80
-
