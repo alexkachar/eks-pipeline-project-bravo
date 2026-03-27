@@ -1,0 +1,13 @@
+{
+  "name": "eks-pipeline-project-bravo-app",
+  "version": "1.0.0",
+  "description": "Simple Express app for EKS pipeline project bravo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
+

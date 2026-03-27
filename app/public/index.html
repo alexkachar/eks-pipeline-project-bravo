@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hello from EKS Pipeline Project Bravo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg-start: #f7f1e3;
+        --bg-end: #dfe6e9;
+        --text: #1f2933;
+        --accent: #d35400;
+        --card: rgba(255, 255, 255, 0.84);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top left, rgba(211, 84, 0, 0.18), transparent 30%),
+          linear-gradient(135deg, var(--bg-start), var(--bg-end));
+        color: var(--text);
+      }
+
+      main {
+        width: min(92vw, 720px);
+        padding: 3rem;
+        border-radius: 28px;
+        background: var(--card);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 24px 80px rgba(31, 41, 51, 0.15);
+        text-align: center;
+      }
+
+      h1 {
+        margin: 0 0 1rem;
+        font-size: clamp(2.8rem, 8vw, 4.8rem);
+        line-height: 0.95;
+      }
+
+      p {
+        margin: 0;
+        font-size: clamp(1.05rem, 2vw, 1.35rem);
+      }
+
+      .accent {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>Node.js, Express, GitHub Actions, Terraform, and EKS</p>
+      <h1>Hello <span class="accent">World</span></h1>
+      <p>Your application is running securely on Kubernetes at alexanderkachar.com.</p>
+    </main>
+  </body>
+</html>
+

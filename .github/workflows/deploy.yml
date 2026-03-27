@@ -1,0 +1,82 @@
+name: Deploy App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "k8s/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-central-1
+  CLUSTER_NAME: eks-pipeline-project-bravo
+  ECR_REPOSITORY: eks-pipeline-project-bravo
+  APP_NAMESPACE: hello-app
+  AWS_ROLE_ARN: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/eks-pipeline-project-bravo-github-actions
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm install
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./app
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
+
+      - name: Wait for cluster add-ons
+        run: |
+          kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=10m
+          kubectl -n cert-manager rollout status deployment/cert-manager --timeout=10m
+          kubectl -n cert-manager rollout status deployment/cert-manager-cainjector --timeout=10m
+          kubectl -n cert-manager rollout status deployment/cert-manager-webhook --timeout=10m
+          kubectl wait --for=condition=established crd/clusterissuers.cert-manager.io --timeout=5m
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/clusterissuer.yaml
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Update deployment image
+        run: |
+          kubectl -n "$APP_NAMESPACE" set image deployment/hello-app hello-app="$IMAGE_URI"
+          kubectl -n "$APP_NAMESPACE" rollout status deployment/hello-app --timeout=5m
